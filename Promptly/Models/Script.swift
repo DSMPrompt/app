@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import SwiftUI
 
 @Model
 class Script: Identifiable {
@@ -176,6 +177,7 @@ enum CueType: String, Codable, CaseIterable {
     case flyGo = "fly_go"
     case automationStandby = "automation_standby"
     case automationGo = "automation_go"
+    case setWarning = "set_warning"
     case setStandby = "set_standby"
     case setGo = "set_go"
     case cuelightStandby = "cuelight_standby"
@@ -191,6 +193,7 @@ enum CueType: String, Codable, CaseIterable {
         case .flyGo: return "Fly GO"
         case .automationStandby: return "Auto Standby"
         case .automationGo: return "Auto GO"
+        case .setWarning: return "Set Warning"
         case .setStandby: return "Set Standby"
         case .setGo: return "Set GO"
         case .cuelightStandby: return "Cuelight Standby"
@@ -198,14 +201,29 @@ enum CueType: String, Codable, CaseIterable {
         }
     }
     
-    var color: String {
+    var categoryColor: String {
         switch self {
         case .lightingStandby, .lightingGo: return "#FFD700"
         case .soundStandby, .soundGo: return "#FF6B6B"
         case .flyStandby, .flyGo: return "#4ECDC4"
         case .automationStandby, .automationGo: return "#45B7D1"
-        case .setStandby, .setGo: return "#944ECD"
+        case .setStandby, .setGo, .setWarning: return "#944ECD"
         case .cuelightStandby, .cuelightGo: return "#CD4EBC"
+        }
+    }
+
+    var sideColor: String {
+        switch self {
+            case .lightingStandby, .soundStandby, .flyStandby, .automationStandby, .setStandby, .setWarning, .cuelightStandby: return Color.orange
+            case .lightingGo, .soundGo, .flyGo, .automationGo, .setGo, .cuelightGo: return Color.green
+        }
+    }
+
+    var cueTypeDisplay: String {
+        switch self {
+            case .lightingStandby, .soundStandby, .flyStandby, .automationStandby, .setStandby, .cuelightStandby: return "STANDBY"
+            case .lightingGo, .soundGo, .flyGo, .automationGo, .setGo, .cuelightGo: return "GO"
+            case .setWarning: return "WARNING"
         }
     }
 }

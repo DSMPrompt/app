@@ -7,7 +7,13 @@
 - CRUD cues
 - Run shows
 - Use an open source 3d ESP based project to go to next line
+- Everything's local, so no worries about internet loss
 - And more!
+
+## Planned Major Features
+- Multi-user shows with informative views for Lighting, Sound, Props, Stage Crew (on Apple Watch)
+- Automatic on-the-fly cue updates on the aforementioned devices
+- Preshow checks from each user, ensuring everyone's ready, even off the comms link!
 
 ## How do I contribute?
 - Please fork the repo, and commit to a new branch

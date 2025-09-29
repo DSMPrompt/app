@@ -882,7 +882,7 @@ struct DSMScriptLineView: View {
                 for cue in cues {
                     var label = AttributedString("⬇︎ \(cue.label) ")
 
-                    label.foregroundColor = calledCues.contains(cue.id) ? .secondary : Color(hex: cue.type.color)
+                    label.foregroundColor = calledCues.contains(cue.id) ? .secondary : Color(hex: cue.type.categoryColor)
                     label.inlinePresentationIntent = .emphasized
 
                     if calledCues.contains(cue.id) {
@@ -959,7 +959,7 @@ struct CueTagView: View {
     var body: some View {
         HStack(spacing: 4) {
             Circle()
-                .fill(Color(hex: cue.type.color))
+                .fill(Color(hex: cue.type.categoryColor))
                 .frame(width: 8, height: 8)
             
             Text(cue.label)
@@ -971,11 +971,11 @@ struct CueTagView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Color(hex: cue.type.color).opacity(isCalled ? 0.1 : 0.2))
+        .background(Color(hex: cue.type.categoryColor).opacity(isCalled ? 0.1 : 0.2))
         .cornerRadius(8)
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(isCalled ? Color.gray : Color(hex: cue.type.color), lineWidth: 2)
+                .stroke(isCalled ? Color.gray : Color(hex: cue.type.categoryColor), lineWidth: 2)
         )
     }
 }
@@ -1036,7 +1036,7 @@ struct DSMCueBoxView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Circle()
-                        .fill(Color(hex: cue.type.color))
+                        .fill(Color(hex: cue.type.categoryColor))
                         .frame(width: 10, height: 10)
                     
                     Text(cue.label)
@@ -1077,7 +1077,7 @@ struct DSMCueBoxView: View {
                     
                     Spacer()
                     
-                    Button(cue.type.isStandby ? "STANDBY" : "GO") {
+                    Button(cue.type.cueTypeDisplay) {
                         onExecute()
                     }
                     .font(.caption)
@@ -1085,7 +1085,7 @@ struct DSMCueBoxView: View {
                     .foregroundColor(.white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(isCalled ? Color.gray : (cue.type.isStandby ? Color.orange : Color.green))
+                    .background(isCalled ? Color.gray : (cue.type.sideColor))
                     .cornerRadius(6)
                     .disabled(isCalled)
                 }
@@ -1095,7 +1095,7 @@ struct DSMCueBoxView: View {
             .cornerRadius(8)
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(isCalled ? Color.gray : Color(hex: cue.type.color), lineWidth: 1)
+                    .stroke(isCalled ? Color.gray : Color(hex: cue.type.categoryColor), lineWidth: 1)
             )
         }
         .buttonStyle(PlainButtonStyle())
@@ -1575,8 +1575,10 @@ extension DSMPerformanceView {
     }
     
     private func executeCue(_ cue: Cue) {
-        if cue.type.isStandby {
+        if cue.type.cueTypeDisplay == "STANDBY" {
             logCall("STANDBY: \(cue.label)", type: .call)
+        } else if cue.type.cueTypeDisplay == "WARNING" {
+            logCall("WARNING: \(cue.label)", type: .call)
         } else {
             logCall("GO: \(cue.label)", type: .action)
         }
@@ -1635,8 +1637,10 @@ extension DSMPerformanceView {
         )
         cueExecutions.append(execution)
         
-        if cue.type.isStandby {
+        if cue.type.cueTypeDisplay == "STANDBY" {
             logCall("REMOTE STANDBY: \(cue.label)", type: .call)
+        } else if cue.type.cueTypeDisplay == "WARNING" {
+            logCall("REMOTE WARNING: \(cue.label)", type: .call)
         } else {
             logCall("REMOTE GO: \(cue.label)", type: .action)
         }
