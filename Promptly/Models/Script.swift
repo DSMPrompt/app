@@ -201,7 +201,7 @@ enum CueType: String, Codable, CaseIterable {
         }
     }
     
-    var categoryColor: String {
+    var color: String {
         switch self {
         case .lightingStandby, .lightingGo: return "#FFD700"
         case .soundStandby, .soundGo: return "#FF6B6B"
