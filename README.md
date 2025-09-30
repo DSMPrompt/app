@@ -1,12 +1,12 @@
-# DSMPrompt
+# DSMPrompt - A new way to DSM
 
 ## What is it?
-- DSMPrompt is an all in one solution for DSMing a show
+- DSMPrompt is an all in one solution for DSMing a show. 
 - Convert pdf scripts easily to our format
 - Export scripts
-- CRUD cues
-- Run shows
-- Use an open source 3d ESP based project to go to next line
+- Create, update, read and delete color-coded cues for LX, SFX and STAGE.
+- Run shows live.
+- Use an open source 3d ESP based project to integrate line-syncing across devices.
 - Everything's local, so no worries about internet loss
 - And more!
 
