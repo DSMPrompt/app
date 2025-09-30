@@ -168,6 +168,35 @@ enum CueOffset: String, Codable, CaseIterable {
     case after = "after"
 }
 
+enum StageLocation: String, Codable, CaseIterable {
+    case leftWing = "left_wing"
+    case rightWing = "right_wing"
+    case upstage = "upstage"
+    case pit = "pit"
+}
+
+struct CueHapticConfig: Codable {
+    var location: StageLocation
+    var number: Int
+}
+
+struct OSCSettings: Codable {
+    var ip: UInt32
+    var port: UInt16
+    var address: String
+}
+
+enum ExecutionType: String, Codable, CaseIterable { // not implemented yet for compatibility purposes, just putting it here for future
+    case osc = "osc" // execute osc cmd
+    case haptic = "haptic" // watch haptic
+}
+
+struct ExecutionSettings: Codable {
+    var execution: ExecutionType
+    var osc: OSCSettings
+    var haptic: CueHapticConfig
+}
+
 enum CueType: String, Codable, CaseIterable {
     case lightingStandby = "lighting_standby"
     case lightingGo = "lighting_go"
@@ -224,6 +253,20 @@ enum CueType: String, Codable, CaseIterable {
             case .lightingStandby, .soundStandby, .flyStandby, .automationStandby, .setStandby, .cuelightStandby: return "STANDBY"
             case .lightingGo, .soundGo, .flyGo, .automationGo, .setGo, .cuelightGo: return "GO"
             case .setWarning: return "WARNING"
+        }
+    }
+
+    var hapticAbility: Bool {
+        switch self {
+            case .lightingStandby, .soundStandby, .flyStandby, .automationStandby, .cuelightStandby, .lightingGo, .soundGo, .flyGo, .automationGo, .cuelightGo: return false
+            case .setWarning, .setStandby, .setGo: return true
+        }
+    }
+
+    var hasSettings: Bool {
+        switch self {
+            case .lightingStandby, .soundStandby, .flyStandby, .cuelightStandby, .automationStandby, .lightingGo, .soundGo, .flyGo, .cuelightGo: return false
+            case .setWarning, .setStandby, .setGo, .automationGo: return true
         }
     }
 }
