@@ -1723,16 +1723,3 @@ extension PerformanceState {
         }
     }
 }
-
-extension CueType {
-    var isStandby: Bool {
-        switch self {
-        case .lightingStandby, .soundStandby, .flyStandby, .automationStandby:
-            return true
-        default:
-            return false
-        }
-    }
-}
-
-
