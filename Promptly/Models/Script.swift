@@ -176,25 +176,8 @@ enum StageLocation: String, Codable, CaseIterable {
 }
 
 struct CueHapticConfig: Codable {
-    var location: StageLocation
-    var number: Int
-}
-
-struct OSCSettings: Codable {
-    var ip: UInt32
-    var port: UInt16
-    var address: String
-}
-
-enum ExecutionType: String, Codable, CaseIterable { // not implemented yet for compatibility purposes, just putting it here for future
-    case osc = "osc" // execute osc cmd
-    case haptic = "haptic" // watch haptic
-}
-
-struct ExecutionSettings: Codable {
-    var execution: ExecutionType
-    var osc: OSCSettings
-    var haptic: CueHapticConfig
+    var location: StageLocation // where are they (if someone is away used for quick swapping)
+    var crewId: Int // unique id (goes from 0, 1, 2 etc) for the crew member, regardless of position
 }
 
 enum CueType: String, Codable, CaseIterable {
