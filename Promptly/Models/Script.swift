@@ -233,14 +233,14 @@ enum CueType: String, Codable, CaseIterable {
         }
     }
 
-    var sideColor: String {
+    var cueStackColor: String {
         switch self {
             case .lightingStandby, .soundStandby, .flyStandby, .automationStandby, .setStandby, .setWarning, .cuelightStandby: return Color.orange
             case .lightingGo, .soundGo, .flyGo, .automationGo, .setGo, .cuelightGo: return Color.green
         }
     }
 
-    var cueTypeDisplay: String {
+    var generalName: String {
         switch self {
             case .lightingStandby, .soundStandby, .flyStandby, .automationStandby, .setStandby, .cuelightStandby: return "STANDBY"
             case .lightingGo, .soundGo, .flyGo, .automationGo, .setGo, .cuelightGo: return "GO"
@@ -248,7 +248,7 @@ enum CueType: String, Codable, CaseIterable {
         }
     }
 
-    var hapticAbility: Bool {
+    var canHaptic: Bool {
         switch self {
             case .lightingStandby, .soundStandby, .flyStandby, .automationStandby, .cuelightStandby, .lightingGo, .soundGo, .flyGo, .automationGo, .cuelightGo: return false
             case .setWarning, .setStandby, .setGo: return true
