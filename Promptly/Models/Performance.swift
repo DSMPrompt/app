@@ -167,6 +167,40 @@ enum PerformanceState: Codable, Equatable {
     case stopped
 }
 
+extension PerformanceState {
+    init(displayName: String) {
+        if displayName == "Pre-Show" {
+            self = .preShow
+        } else if displayName == "House Open" {
+            self = .houseOpen
+        } else if displayName == "Stage Clear" {
+            self = .clearance
+        } else if displayName.hasPrefix("Act ") && displayName.hasSuffix(" Running") {
+            let numberString = displayName
+                .dropFirst(4)
+                .dropLast(8)
+            if let actNumber = Int(numberString) {
+                self = .inProgress(actNumber: actNumber)
+            } else {
+                self = .preShow
+            }
+        } else if displayName.hasPrefix("Interval ") {
+            let numberString = displayName.dropFirst(9)
+            if let intervalNumber = Int(numberString) {
+                self = .interval(intervalNumber: intervalNumber)
+            } else {
+                self = .preShow
+            }
+        } else if displayName == "Show Complete" {
+            self = .completed
+        } else if displayName == "Show Stopped" {
+            self = .stopped
+        } else {
+            self = .preShow
+        }
+    }
+}
+
 @Model
 class CallSettings {
    var halfTime: TimeInterval = 35 * 60

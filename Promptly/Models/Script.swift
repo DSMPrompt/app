@@ -282,3 +282,182 @@ enum MarkColor: String, Codable, CaseIterable {
         }
     }
 }
+
+extension Script {
+    func toDictionary() -> [String: Any] {
+        return [
+            "id": id.uuidString,
+            "name": name,
+            "dateAdded": ISO8601DateFormatter().string(from: dateAdded),
+            "lines": lines.map { $0.toDictionary() },
+            "sections": sections.map { $0.toDictionary() }
+        ]
+    }
+}
+
+extension ScriptSection {
+    func toDictionary() -> [String: Any] {
+        return [
+            "id": id.uuidString,
+            "title": title,
+            "type": type.rawValue,
+            "startLineNumber": startLineNumber,
+            "endLineNumber": endLineNumber as Any,
+            "notes": notes
+        ]
+    }
+}
+
+extension ScriptLine {
+    func toDictionary() -> [String: Any] {
+        return [
+            "id": id.uuidString,
+            "lineNumber": lineNumber,
+            "content": content,
+            "elements": elements.map { $0.toDictionary() },
+            "cues": cues.map { $0.toDictionary() },
+            "isMarked": isMarked,
+            "markColor": markColor as Any,
+            "notes": notes
+        ]
+    }
+}
+
+extension LineElement {
+    func toDictionary() -> [String: Any] {
+        return [
+            "id": id.uuidString,
+            "position": position,
+            "content": content,
+            "type": type.rawValue,
+            "isMarked": isMarked,
+            "markColor": markColor as Any
+        ]
+    }
+}
+
+extension Cue {
+    func toDictionary() -> [String: Any] {
+        return [
+            "id": id.uuidString,
+            "lineId": lineId.uuidString,
+            "position": [
+                "elementIndex": position.elementIndex,
+                "offset": position.offset.rawValue
+            ],
+            "type": type.rawValue,
+            "label": label,
+            "notes": notes,
+            "hasAlert": hasAlert,
+            "alertSound": alertSound as Any
+        ]
+    }
+}
+
+extension Script {
+    convenience init?(from dict: [String: Any]) {
+        guard let idString = dict["id"] as? String,
+              let id = UUID(uuidString: idString),
+              let name = dict["name"] as? String,
+              let dateAddedString = dict["dateAdded"] as? String,
+              let dateAdded = ISO8601DateFormatter().date(from: dateAddedString) else {
+            return nil
+        }
+        
+        self.init(id: id, name: name, dateAdded: dateAdded)
+        
+        if let linesArray = dict["lines"] as? [[String: Any]] {
+            self.lines = linesArray.compactMap { ScriptLine(from: $0) }
+        }
+        
+        if let sectionsArray = dict["sections"] as? [[String: Any]] {
+            self.sections = sectionsArray.compactMap { ScriptSection(from: $0) }
+        }
+    }
+}
+
+extension ScriptSection {
+    convenience init?(from dict: [String: Any]) {
+        guard let idString = dict["id"] as? String,
+              let id = UUID(uuidString: idString),
+              let title = dict["title"] as? String,
+              let typeString = dict["type"] as? String,
+              let type = SectionType(rawValue: typeString),
+              let startLineNumber = dict["startLineNumber"] as? Int else {
+            return nil
+        }
+        
+        self.init(id: id, title: title, type: type, startLineNumber: startLineNumber)
+        
+        self.endLineNumber = dict["endLineNumber"] as? Int
+        self.notes = dict["notes"] as? String ?? ""
+    }
+}
+
+extension ScriptLine {
+    convenience init?(from dict: [String: Any]) {
+        guard let idString = dict["id"] as? String,
+              let id = UUID(uuidString: idString),
+              let lineNumber = dict["lineNumber"] as? Int,
+              let content = dict["content"] as? String else {
+            return nil
+        }
+        
+        self.init(id: id, lineNumber: lineNumber, content: content)
+        
+        if let elementsArray = dict["elements"] as? [[String: Any]] {
+            self.elements = elementsArray.compactMap { LineElement(from: $0) }
+        }
+        
+        if let cuesArray = dict["cues"] as? [[String: Any]] {
+            self.cues = cuesArray.compactMap { Cue(from: $0) }
+        }
+        
+        self.isMarked = dict["isMarked"] as? Bool ?? false
+        self.markColor = dict["markColor"] as? String
+        self.notes = dict["notes"] as? String ?? ""
+    }
+}
+
+extension LineElement {
+    convenience init?(from dict: [String: Any]) {
+        guard let idString = dict["id"] as? String,
+              let id = UUID(uuidString: idString),
+              let position = dict["position"] as? Int,
+              let content = dict["content"] as? String,
+              let typeString = dict["type"] as? String,
+              let type = ElementType(rawValue: typeString) else {
+            return nil
+        }
+        
+        self.init(id: id, position: position, content: content, type: type)
+        
+        self.isMarked = dict["isMarked"] as? Bool ?? false
+        self.markColor = dict["markColor"] as? String
+    }
+}
+
+extension Cue {
+    convenience init?(from dict: [String: Any]) {
+        guard let idString = dict["id"] as? String,
+              let id = UUID(uuidString: idString),
+              let lineIdString = dict["lineId"] as? String,
+              let lineId = UUID(uuidString: lineIdString),
+              let positionDict = dict["position"] as? [String: Any],
+              let elementIndex = positionDict["elementIndex"] as? Int,
+              let offsetString = positionDict["offset"] as? String,
+              let offset = CueOffset(rawValue: offsetString),
+              let typeString = dict["type"] as? String,
+              let type = CueType(rawValue: typeString),
+              let label = dict["label"] as? String else {
+            return nil
+        }
+        
+        let position = CuePosition(elementIndex: elementIndex, offset: offset)
+        self.init(id: id, lineId: lineId, position: position, type: type, label: label)
+        
+        self.notes = dict["notes"] as? String ?? ""
+        self.hasAlert = dict["hasAlert"] as? Bool ?? false
+        self.alertSound = dict["alertSound"] as? String
+    }
+}

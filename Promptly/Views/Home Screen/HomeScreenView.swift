@@ -15,7 +15,8 @@ struct HomeScreenView: View {
     
     @State var navStackMessage: String = ""
     @State var addShow: Bool = false
-    @State var availableShows: [String] = []
+    @State var showNetworkSettings: Bool = false
+    @State var availableShows: [String: String] = [:]
     
     @StateObject private var mqttManager = MQTTManager()
     
@@ -35,16 +36,19 @@ struct HomeScreenView: View {
             .onAppear {
                 self.setupGreeting()
                 
-                mqttManager.connect(to: "192.168.1.185", port: 1883)
+                mqttManager.connect(to: Constants.mqttIP, port: Constants.mqttPort)
                 
-                mqttManager.subscribeToShowChanges { showId, message in
-                    if !availableShows.contains(showId) {
-                        availableShows.append(showId)
+                mqttManager.subscribeToShowChanges { showId, property, message, title in
+                    if UUID(uuidString: showId) != nil && availableShows[showId] == nil {
+                        availableShows[showId] = title ?? "Unknown Show"
                     }
                 }
             }
             .sheet(isPresented: self.$addShow) {
                 AddShowViewWrapper()
+            }
+            .sheet(isPresented: self.$showNetworkSettings) {
+                NetworkSettingsView()
             }
         }
     }
@@ -77,9 +81,9 @@ struct HomeScreenView: View {
                         Text("No available shows")
                             .foregroundStyle(.secondary)
                     } else {
-                        ForEach(availableShows, id: \.self) { showId in
-                            NavigationLink(destination: Text("Join show \(showId)")) {
-                                Text("Show \(showId)")
+                        ForEach(Array(availableShows.keys), id: \.self) { showId in
+                            NavigationLink(destination: MultiPlayerShowDetail(showID: showId, mqttManager: self.mqttManager)) {
+                                Text(availableShows[showId] ?? "Unknown Show")
                             }
                         }
                     }
@@ -91,12 +95,15 @@ struct HomeScreenView: View {
     var toolbarContent: some View {
         Group {
             Button {
+                self.showNetworkSettings = true
+            } label: {
+                Label("Network Settings", systemImage: "network")
+            }
+            
+            Button {
                 self.addShow = true
             } label: {
-                Label(
-                    "Add Show",
-                    systemImage: "plus"
-                )
+                Label("Add Show", systemImage: "plus")
             }
         }
     }
@@ -111,6 +118,52 @@ struct HomeScreenView: View {
             self.navStackMessage = "Good Evening"
         } else {
             self.navStackMessage = "Good Night"
+        }
+    }
+}
+
+struct NetworkSettingsView: View {
+    @Environment(\.dismiss) var dismiss
+    
+    @State private var mqttIP: String = Constants.mqttIP
+    @State private var mqttPort: String = String(Constants.mqttPort)
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("MQTT IP Address", text: $mqttIP)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    
+                    TextField("MQTT Port", text: $mqttPort)
+                        .keyboardType(.numberPad)
+                } header: {
+                    Text("Connection Settings")
+                } footer: {
+                    Text("To apply changes, restart the app")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("Network Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        if let port = Int(mqttPort) {
+                            Constants.mqttIP = mqttIP
+                            Constants.mqttPort = port
+                        }
+                        dismiss()
+                    }
+                }
+            }
         }
     }
 }

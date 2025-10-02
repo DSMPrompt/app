@@ -296,6 +296,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "We use bluetooth connectivity to connect to Promptly Clicker devices for script line control.";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "This app connects to BLE devices for remote control functionality.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "We need access to your local network to serve your show script for other members of your crew.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -339,6 +340,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "We use bluetooth connectivity to connect to Promptly Clicker devices for script line control.";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "This app connects to BLE devices for remote control functionality.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "We need access to your local network to serve your show script for other members of your crew.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

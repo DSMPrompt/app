@@ -12,6 +12,9 @@ import SwiftData
 struct PromptlyApp: App {
     init() {
         UIScrollView.appearance().scrollsToTop = false
+        if UserDefaults.standard.string(forKey: "deviceUUID") == nil {
+            UserDefaults.standard.set(UUID().uuidString, forKey: "deviceUUID")
+        }
     }
     
     var body: some Scene {

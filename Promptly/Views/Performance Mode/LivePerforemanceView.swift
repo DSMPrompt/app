@@ -1,5 +1,9 @@
 import SwiftUI
 import SwiftData
+import Foundation
+import Network
+import Darwin
+import Combine
 
 struct DSMPerformanceView: View {
     @Environment(\.modelContext) private var modelContext
@@ -28,9 +32,11 @@ struct DSMPerformanceView: View {
     @State private var cueExecutions: [ReportCueExecution] = []
     @State private var showingCueAlert = false
     @State private var cueAlertTimer: Timer?
+    @State private var uuidOfShow: String = ""
     @FocusState private var isViewFocused: Bool
     @StateObject private var bluetoothManager = PromptlyBluetoothManager()
     @StateObject private var mqttManager = MQTTManager()
+    @StateObject private var jsonServer = JSONServer(port: 8080)
 
     
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -119,6 +125,50 @@ struct DSMPerformanceView: View {
     }
     
     var body: some View {
+        mainContentView
+            .applyDSMModifiers(
+                isViewFocused: $isViewFocused,
+                showingStopAlert: $showingStopAlert,
+                showingEndConfirmation: $showingEndConfirmation,
+                showingBluetoothSettings: $showingBluetoothSettings,
+                showingSettings: $showingSettings,
+                showingDetails: $showingDetails,
+                stopReason: $stopReason,
+                keepDisplayAwake: $keepDisplayAwake,
+                scrollToChangesActiveLine: $scrollToChangesActiveLine,
+                performance: performance,
+                showId: uuidOfShow,
+                mqttManager: mqttManager,
+                timing: $performanceTiming,
+                callsLog: $callsLog,
+                currentState: $currentState,
+                isShowRunning: $isShowRunning,
+                canMakeQuickCalls: canMakeQuickCalls,
+                bluetoothManager: bluetoothManager,
+                onAppear: setupView,
+                onDisappear: cleanupView,
+                onStateChange: handleStateChange,
+                onStartShow: startShow,
+                onStopShow: { showingStopAlert = true },
+                onEndShow: { showingEndConfirmation = true },
+                onStartInterval: startInterval,
+                onStartNextAct: startNextAct,
+                onEmergencyStop: emergencyStop,
+                onEndPerformance: endPerformance,
+                onCacheUpdate: updateCuesCache,
+                onScriptChange: handleScriptChange,
+                onLineMove: moveToLine,
+                onCueExecute: executeNextCue,
+                timer: timer,
+                currentTime: $currentTime,
+                allCues: allCues,
+                hiddenCues: hiddenCues,
+                sortedLinesCache: sortedLinesCache,
+                script: script
+            )
+    }
+
+    private var mainContentView: some View {
         GeometryReader { geometry in
             ZStack {
                 VStack(spacing: 0) {
@@ -162,105 +212,77 @@ struct DSMPerformanceView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .navigationBarHidden(true)
-        .preferredColorScheme(.dark)
-        .focusable()
-        .focused($isViewFocused)
-        .onKeyPress(.downArrow) {
-            withAnimation(.easeOut(duration: 0.1)) {
-                moveToLine(currentLineNumber + 1)
-            }
-            return .handled
-        }
-        .onKeyPress(.upArrow) {
-            withAnimation(.easeOut(duration: 0.1)) {
-                moveToLine(currentLineNumber - 1)
-            }
-            return .handled
-        }
-        .onAppear {
-            isViewFocused = true
-            if keepDisplayAwake {
-                UIApplication.shared.isIdleTimerDisabled = true
-            }
+    }
 
-            sortedLinesCache = script?.lines.sorted { $0.lineNumber < $1.lineNumber } ?? []
-            updateLinesCache()
-            loadAllCues()
-            updateCuesCache()
+    private func setupView() {
+        isViewFocused = true
+        if keepDisplayAwake {
+            UIApplication.shared.isIdleTimerDisabled = true
+        }
+
+        sortedLinesCache = script?.lines.sorted { $0.lineNumber < $1.lineNumber } ?? []
+        updateLinesCache()
+        loadAllCues()
+        updateCuesCache()
+        
+        mqttManager.connect(to: Constants.mqttIP, port: Constants.mqttPort)
+        
+        if let show = performance.show {
+            guard let scriptDict = show.script?.toDictionary() else {
+                print("well fuck uhhhh my guy u are cookido")
+                return
+            }
+            jsonServer.start(dataToServe: scriptDict)
             
-            mqttManager.connect(to: "192.168.1.185", port: 1883)
+            mqttManager.sendOutShow(
+                id: show.id.uuidString,
+                title: show.title,
+                location: show.locationString,
+                scriptName: show.script?.name,
+                status: currentState,
+                dsmNetworkIP: getLocalIPAddress() ?? "N/A"
+            )
             
-            bluetoothManager.onButtonPress = { value in
-                if value == "1" {
-                    withAnimation(.easeOut(duration: 0.1)) {
-                        moveToLine(currentLineNumber + 1)
-                    }
-                } else if value == "0" {
-                    withAnimation(.easeOut(duration: 0.1)) {
-                        moveToLine(currentLineNumber - 1)
-                    }
-                } else if value == "2" {
-                    executeNextCue()
+            let showUUID = show.id.uuidString
+            print("🚀 Setting uuidOfShow to: '\(showUUID)'")
+            uuidOfShow = showUUID
+            
+            print("🚀 Sending initial line with UUID: '\(showUUID)'")
+            mqttManager.sendData(to: "shows/\(showUUID)/line", message: "1")
+        }
+        
+        bluetoothManager.onButtonPress = { value in
+            if value == "1" {
+                withAnimation(.easeOut(duration: 0.1)) {
+                    moveToLine(currentLineNumber + 1)
                 }
+            } else if value == "0" {
+                withAnimation(.easeOut(duration: 0.1)) {
+                    moveToLine(currentLineNumber - 1)
+                }
+            } else if value == "2" {
+                executeNextCue()
             }
         }
-        .onChange(of: allCues) { _, _ in updateCuesCache() }
-        .onChange(of: hiddenCues) { _, _ in updateCuesCache() }
-        .onChange(of: sortedLinesCache) { _, _ in updateCuesCache() }
-        .onChange(of: script) { _, _ in
-            updateLinesCache()
-            loadAllCues()
-            updateCuesCache()
+    }
+
+    private func cleanupView() {
+        UIApplication.shared.isIdleTimerDisabled = false
+        for timer in cueHideTimers.values {
+            timer.invalidate()
         }
-        .onDisappear {
-            UIApplication.shared.isIdleTimerDisabled = false
-            for timer in cueHideTimers.values {
-                timer.invalidate()
-            }
-            cueHideTimers.removeAll()
-            cueAlertTimer?.invalidate()
-        }
-        .onReceive(timer) { _ in
-            currentTime = Date()
-        }
-        .alert("Emergency Stop", isPresented: $showingStopAlert) {
-            TextField("Reason", text: $stopReason)
-            Button("Cancel", role: .cancel) { }
-            Button("Stop Show", role: .destructive) {
-                emergencyStop()
-            }
-        }
-        .alert("End Performance", isPresented: $showingEndConfirmation) {
-            Button("Cancel", role: .cancel) { }
-            Button("End Show") {
-                endPerformance()
-            }
-        }
-        .sheet(isPresented: $showingBluetoothSettings) {
-            PromptlyBluetoothSettingsView(bluetoothManager: bluetoothManager)
-        }
-        .sheet(isPresented: $showingSettings) {
-            DSMSettingsView(
-                keepDisplayAwake: $keepDisplayAwake,
-                scrollToChangesActiveLine: $scrollToChangesActiveLine
-            )
-        }
-        .sheet(isPresented: $showingDetails) {
-            DSMDetailsView(
-                performance: performance,
-                timing: $performanceTiming,
-                callsLog: $callsLog,
-                currentState: $currentState,
-                isShowRunning: $isShowRunning,
-                canMakeQuickCalls: canMakeQuickCalls,
-                onStartShow: { startShow() },
-                onStopShow: { showingStopAlert = true },
-                onEndShow: { showingEndConfirmation = true },
-                onStartInterval: { startInterval() },
-                onStartNextAct: { startNextAct() }
-            )
-        }
+        cueHideTimers.removeAll()
+        cueAlertTimer?.invalidate()
+    }
+
+    private func handleStateChange() {
+        mqttManager.sendData(to: "shows/\(uuidOfShow)/status", message: currentState.displayName)
+    }
+
+    private func handleScriptChange() {
+        updateLinesCache()
+        loadAllCues()
+        updateCuesCache()
     }
     
     private var compactHeader: some View {
@@ -484,78 +506,11 @@ struct DSMPerformanceView: View {
         }
     }
     
-    // private var scriptContentView: some View {
-    //     ScrollViewReader { proxy in
-    //         ScrollView {
-    //             LazyVStack(alignment: .leading, spacing: 8) {
-    //                 ForEach(groupLinesBySection(), id: \.stableId) { group in
-    //                     if let section = group.section {
-    //                         DSMSectionHeaderView(section: section)
-    //                             .id("section-\(section.id)")
-    //                     }
-    //
-    //                     // ForEach(group.lines, id: \.id) { line in
-    //                     //     DSMScriptLineView(
-    //                     //         line: line,
-    //                     //         isCurrent: line.lineNumber == currentLineNumber,
-    //                     //         onLineTap: {
-    //                     //             currentLineNumber = line.lineNumber
-    //                     //         },
-    //                     //         calledCues: calledCues
-    //                     //     )
-    //                     //     .id("line-\(line.lineNumber)")
-    //                     // }
-    //
-    //                     // ForEach(group.lines, id: \.id) { line in
-    //                     //     if abs(line.lineNumber - currentLineNumber) < 50 {
-    //                     //         DSMScriptLineView(
-    //                     //             line: line,
-    //                     //             isCurrent: line.lineNumber == currentLineNumber,
-    //                     //             onLineTap: {
-    //                     //                 currentLineNumber = line.lineNumber
-    //                     //             },
-    //                     //             calledCues: calledCues
-    //                     //         )
-    //                     //     }
-    //                     // }
-    //
-    //                     ForEach(group.lines.prefix(500), id: \.id) { line in
-    //                         Text("L\(line.lineNumber): \(line.content)")
-    //                             .padding(.vertical, 4)
-    //                             .id("line-\(line.lineNumber)")
-    //                     }
-    //                 }
-    //             }
-    //             .padding()
-    //         }
-    //         .onChange(of: currentLineNumber) { _, newValue in
-    //             withAnimation(.easeOut(duration: 0.15)) {
-    //                 proxy.scrollTo("line-\(newValue)", anchor: .center)
-    //             }
-    //         }
-    //     }
-    // }
-    
-    // private var scriptContentView: some View {
-    //     ScrollViewReader { proxy in
-    //         ScrollView {
-    //             LazyVStack(alignment: .leading, spacing: 8) {
-    //                 ForEach(sortedLinesCache.prefix(300), id: \.id) { line in
-    //                     Text("L\(line.lineNumber): \(line.content)")
-    //                         .padding(.vertical, 4)
-    //                         .id("line-\(line.lineNumber)")
-    //                 }
-    //             }
-    //             .padding()
-    //         }
-    //         .onChange(of: currentLineNumber) { _, newValue in
-    //             proxy.scrollTo("line-\(newValue)", anchor: .center)
-    //         }
-    //     }
-    // }
-    
     private var scriptContentView: some View {
-        ScrollViewReader { proxy in
+        let showUUID = self.uuidOfShow
+        print("🔍 scriptContentView rendering - uuidOfShow: '\(showUUID)'")
+        
+        return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     ForEach(sortedLinesCache, id: \.id) { line in
@@ -563,8 +518,12 @@ struct DSMPerformanceView: View {
                             line: line,
                             isCurrent: line.lineNumber == currentLineNumber,
                             onLineTap: {
+                                print("🎯 Tapped line \(line.lineNumber)")
+                                print("🔍 showUUID in closure: '\(showUUID)'")
+                                print("🔍 self.uuidOfShow in closure: '\(self.uuidOfShow)'")
+                                
                                 currentLineNumber = line.lineNumber
-                                self.mqttManager.sendData(to: "shows/1/line", message: "\(line.lineNumber)")
+                                self.mqttManager.sendData(to: "shows/\(showUUID)/line", message: "\(line.lineNumber)")
                             },
                             calledCues: calledCues
                         )
@@ -574,7 +533,7 @@ struct DSMPerformanceView: View {
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
-            .background(Color(.systemBackground)) // improves gesture hitbox
+            .background(Color(.systemBackground))
             .onChange(of: currentLineNumber) { _, newValue in
                 proxy.scrollTo("line-\(newValue)", anchor: .center)
             }
@@ -721,6 +680,40 @@ struct DSMPerformanceView: View {
         let seconds = Int(interval) % 60
         
         return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+    }
+    
+    func getLocalIPAddress() -> String? {
+        var address: String?
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+        
+        guard getifaddrs(&ifaddr) == 0 else { return nil }
+        guard let firstAddr = ifaddr else { return nil }
+        
+        defer { freeifaddrs(ifaddr) }
+        
+        for ifptr in sequence(first: firstAddr, next: { $0.pointee.ifa_next }) {
+            let interface = ifptr.pointee
+            let addrFamily = interface.ifa_addr.pointee.sa_family
+            
+            if addrFamily == UInt8(AF_INET) {
+                let name = String(cString: interface.ifa_name)
+                
+                if name == "en0" || name == "en1" || name.starts(with: "en") {
+                    var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+                    getnameinfo(interface.ifa_addr,
+                               socklen_t(interface.ifa_addr.pointee.sa_len),
+                               &hostname,
+                               socklen_t(hostname.count),
+                               nil,
+                               socklen_t(0),
+                               NI_NUMERICHOST)
+                    address = String(cString: hostname)
+                    break
+                }
+            }
+        }
+        
+        return address
     }
 }
 
@@ -1104,6 +1097,8 @@ struct DSMCueBoxView: View {
 
 struct DSMDetailsView: View {
     let performance: Performance
+    let showId: String
+    @ObservedObject var mqttManager: MQTTManager
     @Binding var timing: PerformanceTiming
     @Binding var callsLog: [CallLogEntry]
     @Binding var currentState: PerformanceState
@@ -1171,6 +1166,7 @@ struct DSMDetailsView: View {
                                         timing.houseOpenTime = Date()
                                         timing.currentState = .houseOpen
                                         logCall("House Open", type: .action)
+                                        self.mqttManager.sendData(to: "shows/\(showId)/timeCalls", message: "House Open")
                                     }
                                 }
                                 
@@ -1185,6 +1181,7 @@ struct DSMDetailsView: View {
                                         timing.clearanceTime = Date()
                                         timing.currentState = .clearance
                                         logCall("Stage Clear - Beginners", type: .call)
+                                        self.mqttManager.sendData(to: "shows/\(showId)/timeCalls", message: "Stage Clear")
                                     }
                                 }
                                 
@@ -1268,15 +1265,19 @@ struct DSMDetailsView: View {
                             ], spacing: 12) {
                                 DSMCallButton(title: "Half Hour", time: "35 min") {
                                     logCall("Half Hour Call", type: .call)
+                                    self.mqttManager.sendData(to: "shows/\(showId)/timeCalls", message: "Half Hour Call (35 min)")
                                 }
                                 DSMCallButton(title: "Quarter Hour", time: "20 min") {
                                     logCall("Quarter Hour Call", type: .call)
+                                    self.mqttManager.sendData(to: "shows/\(showId)/timeCalls", message: "Quarter Hour Call (20 min)")
                                 }
                                 DSMCallButton(title: "Five Minutes", time: "10 min") {
                                     logCall("Five Minutes Call", type: .call)
+                                    self.mqttManager.sendData(to: "shows/\(showId)/timeCalls", message: "Five Minutes Call (10 min)")
                                 }
                                 DSMCallButton(title: "Beginners", time: "5 min") {
                                     logCall("Beginners Call", type: .call)
+                                    self.mqttManager.sendData(to: "shows/\(showId)/timeCalls", message: "Beginners Call (5 min)")
                                 }
                             }
                         }
@@ -1513,7 +1514,8 @@ extension DSMPerformanceView {
         try? modelContext.save()
         
         // Dismiss the DSM view after a brief delay to show the completion state
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            self.mqttManager.removeShow(id: self.uuidOfShow)
             dismiss()
         }
     }
@@ -1617,6 +1619,13 @@ extension DSMPerformanceView {
             }
             cueHideTimers[cue.id] = timer
         }
+        
+        // SEND THE UPDATE HERE
+        let uuidStrings = calledCues.map { $0.uuidString }
+        if let jsonData = try? JSONEncoder().encode(uuidStrings),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            mqttManager.sendData(to: "shows/\(uuidOfShow)/calledCues", message: jsonString)
+        }
     }
     
     private func executeNextCue() {
@@ -1628,6 +1637,7 @@ extension DSMPerformanceView {
         }
         
         calledCues.insert(cue.id)
+        
         let execution = ReportCueExecution(
             timestamp: Date(),
             cueLabel: cue.label,
@@ -1636,13 +1646,31 @@ extension DSMPerformanceView {
             executionMethod: "Remote Control"
         )
         cueExecutions.append(execution)
-        
+      
+        if cue.hasAlert {
+            showCueAlert()
+        }
+      
         if cue.type.generalName == "STANDBY" {
             logCall("REMOTE STANDBY: \(cue.label)", type: .call)
         } else if cue.type.generalName == "WARNING" {
             logCall("REMOTE WARNING: \(cue.label)", type: .call)
         } else {
             logCall("REMOTE GO: \(cue.label)", type: .action)
+        }
+        
+        let timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { _ in
+            withAnimation(.easeOut(duration: 0.3)) {
+                hiddenCues.insert(cue.id)
+            }
+            cueHideTimers.removeValue(forKey: cue.id)
+        }
+        cueHideTimers[cue.id] = timer
+        
+        let uuidStrings = calledCues.map { $0.uuidString }
+        if let jsonData = try? JSONEncoder().encode(uuidStrings),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            mqttManager.sendData(to: "shows/\(uuidOfShow)/calledCues", message: jsonString)
         }
     }
     
@@ -1662,7 +1690,7 @@ extension DSMPerformanceView {
     private func moveToLine(_ lineNumber: Int) {
         guard lineNumber >= 1 && lineNumber <= sortedLinesCache.count else { return }
         currentLineNumber = lineNumber
-        self.mqttManager.sendData(to: "shows/1/line", message: String(lineNumber))
+        self.mqttManager.sendData(to: "shows/\(self.uuidOfShow)/line", message: String(lineNumber))
     }
     
     private func logCall(_ message: String, type: CallLogEntry.CallType = .note) {
@@ -1721,5 +1749,111 @@ extension PerformanceState {
         case .inProgress(let actNumber): return actNumber
         default: return nil
         }
+    }
+}
+
+extension View {
+    func applyDSMModifiers(
+        isViewFocused: FocusState<Bool>.Binding,
+        showingStopAlert: Binding<Bool>,
+        showingEndConfirmation: Binding<Bool>,
+        showingBluetoothSettings: Binding<Bool>,
+        showingSettings: Binding<Bool>,
+        showingDetails: Binding<Bool>,
+        stopReason: Binding<String>,
+        keepDisplayAwake: Binding<Bool>,
+        scrollToChangesActiveLine: Binding<Bool>,
+        performance: Performance,
+        showId: String,
+        mqttManager: MQTTManager,
+        timing: Binding<PerformanceTiming>,
+        callsLog: Binding<[CallLogEntry]>,
+        currentState: Binding<PerformanceState>,
+        isShowRunning: Binding<Bool>,
+        canMakeQuickCalls: Bool,
+        bluetoothManager: PromptlyBluetoothManager,
+        onAppear: @escaping () -> Void,
+        onDisappear: @escaping () -> Void,
+        onStateChange: @escaping () -> Void,
+        onStartShow: @escaping () -> Void,
+        onStopShow: @escaping () -> Void,
+        onEndShow: @escaping () -> Void,
+        onStartInterval: @escaping () -> Void,
+        onStartNextAct: @escaping () -> Void,
+        onEmergencyStop: @escaping () -> Void,
+        onEndPerformance: @escaping () -> Void,
+        onCacheUpdate: @escaping () -> Void,
+        onScriptChange: @escaping () -> Void,
+        onLineMove: @escaping (Int) -> Void,
+        onCueExecute: @escaping () -> Void,
+        timer: Publishers.Autoconnect<Timer.TimerPublisher>,
+        currentTime: Binding<Date>,
+        allCues: [Cue],
+        hiddenCues: Set<UUID>,
+        sortedLinesCache: [ScriptLine],
+        script: Script?
+    ) -> some View {
+        self
+            .navigationBarHidden(true)
+            .preferredColorScheme(.dark)
+            .focusable()
+            .focused(isViewFocused)
+            .onKeyPress(.downArrow) {
+                withAnimation(.easeOut(duration: 0.1)) {
+                    onLineMove(sortedLinesCache.first(where: { $0.lineNumber > sortedLinesCache.first?.lineNumber ?? 0 })?.lineNumber ?? 1)
+                }
+                return .handled
+            }
+            .onKeyPress(.upArrow) {
+                withAnimation(.easeOut(duration: 0.1)) {
+                    onLineMove(sortedLinesCache.first(where: { $0.lineNumber < sortedLinesCache.first?.lineNumber ?? 0 })?.lineNumber ?? 1)
+                }
+                return .handled
+            }
+            .onAppear(perform: onAppear)
+            .onChange(of: allCues) { _, _ in onCacheUpdate() }
+            .onChange(of: hiddenCues) { _, _ in onCacheUpdate() }
+            .onChange(of: sortedLinesCache) { _, _ in onCacheUpdate() }
+            .onChange(of: script) { _, _ in onScriptChange() }
+            .onChange(of: currentState.wrappedValue) { _, _ in onStateChange() }
+            .onDisappear(perform: onDisappear)
+            .onReceive(timer) { _ in
+                currentTime.wrappedValue = Date()
+            }
+            .alert("Emergency Stop", isPresented: showingStopAlert) {
+                TextField("Reason", text: stopReason)
+                Button("Cancel", role: .cancel) { }
+                Button("Stop Show", role: .destructive, action: onEmergencyStop)
+            }
+            .alert("End Performance", isPresented: showingEndConfirmation) {
+                Button("Cancel", role: .cancel) { }
+                Button("End Show", action: onEndPerformance)
+            }
+            .sheet(isPresented: showingBluetoothSettings) {
+                PromptlyBluetoothSettingsView(bluetoothManager: bluetoothManager)
+            }
+            .sheet(isPresented: showingSettings) {
+                DSMSettingsView(
+                    keepDisplayAwake: keepDisplayAwake,
+                    scrollToChangesActiveLine: scrollToChangesActiveLine
+                )
+            }
+            .sheet(isPresented: showingDetails) {
+                DSMDetailsView(
+                    performance: performance,
+                    showId: showId,
+                    mqttManager: mqttManager,
+                    timing: timing,
+                    callsLog: callsLog,
+                    currentState: currentState,
+                    isShowRunning: isShowRunning,
+                    canMakeQuickCalls: canMakeQuickCalls,
+                    onStartShow: onStartShow,
+                    onStopShow: onStopShow,
+                    onEndShow: onEndShow,
+                    onStartInterval: onStartInterval,
+                    onStartNextAct: onStartNextAct
+                )
+            }
     }
 }
