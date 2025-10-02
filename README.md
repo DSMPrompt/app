@@ -9,11 +9,14 @@
 - Use an open source 3d ESP based project to integrate line-syncing across devices.
 - Everything's local, so no worries about internet loss
 - And more!
-
+- 
 ## Planned Major Features
 - Multi-user shows with informative views for Lighting, Sound, Props, Stage Crew (on Apple Watch)
 - Automatic on-the-fly cue updates on the aforementioned devices
 - Preshow checks from each user, ensuring everyone's ready, even off the comms link!
+
+## Line syncing?
+- Yep! By connecting to a MQTT server running on a WiFi network, experiece line by line sync between the DSM and anybody else! Cues are synced also - so everynody is on the same page. No longer are the days where you need to ask the DSM where the show currently is!
 
 ## How do I contribute?
 - Please fork the repo, and commit to a new branch
