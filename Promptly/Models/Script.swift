@@ -169,10 +169,19 @@ enum CueOffset: String, Codable, CaseIterable {
 }
 
 enum StageLocation: String, Codable, CaseIterable {
+    case pit = "pit"
     case leftWing = "left_wing"
     case rightWing = "right_wing"
     case upstage = "upstage"
-    case pit = "pit"
+    case downstage = "downstage"
+    case stageLeft = "stage_left"
+    case stageRight = "stage_right"
+    case upstageLeft = "upstage_left"
+    case upstageRight = "upstage_right"
+    case downstageLeft = "downstage_left"
+    case downstageRight = "downstage_right"
+    case centerStage = "center_stage"
+    
 }
 
 struct CueHapticConfig: Codable {
