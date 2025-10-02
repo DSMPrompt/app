@@ -254,6 +254,13 @@ enum CueType: String, Codable, CaseIterable {
             case .setWarning, .setStandby, .setGo: return true
         }
     }
+
+    var isStandby: Bool {
+        switch self {
+            case .lightingStandby, .soundStandby, .flyStandby, .automationStandby, .setStandby, .cuelightStandby, .setWarning: return true
+            case .lightingGo, .soundGo, .flyGo, .automationGo, .setGo, .cuelightGo: return false
+        }
+    }
 }
 
 enum MarkColor: String, Codable, CaseIterable {

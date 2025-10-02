@@ -1077,7 +1077,7 @@ struct DSMCueBoxView: View {
                     
                     Spacer()
                     
-                    Button(cue.type.cueTypeDisplay) {
+                    Button(cue.type.generalName) {
                         onExecute()
                     }
                     .font(.caption)
@@ -1085,7 +1085,7 @@ struct DSMCueBoxView: View {
                     .foregroundColor(.white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(isCalled ? Color.gray : (cue.type.sideColor))
+                    .background(isCalled ? Color.gray : (cue.type.cueStackColor))
                     .cornerRadius(6)
                     .disabled(isCalled)
                 }
@@ -1575,9 +1575,9 @@ extension DSMPerformanceView {
     }
     
     private func executeCue(_ cue: Cue) {
-        if cue.type.cueTypeDisplay == "STANDBY" {
+        if cue.type.generalName == "STANDBY" {
             logCall("STANDBY: \(cue.label)", type: .call)
-        } else if cue.type.cueTypeDisplay == "WARNING" {
+        } else if cue.type.generalName == "WARNING" {
             logCall("WARNING: \(cue.label)", type: .call)
         } else {
             logCall("GO: \(cue.label)", type: .action)
@@ -1637,9 +1637,9 @@ extension DSMPerformanceView {
         )
         cueExecutions.append(execution)
         
-        if cue.type.cueTypeDisplay == "STANDBY" {
+        if cue.type.generalName == "STANDBY" {
             logCall("REMOTE STANDBY: \(cue.label)", type: .call)
-        } else if cue.type.cueTypeDisplay == "WARNING" {
+        } else if cue.type.generalName == "WARNING" {
             logCall("REMOTE WARNING: \(cue.label)", type: .call)
         } else {
             logCall("REMOTE GO: \(cue.label)", type: .action)
