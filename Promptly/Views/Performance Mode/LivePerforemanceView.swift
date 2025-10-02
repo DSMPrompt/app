@@ -1,4 +1,4 @@
-limport SwiftUI
+import SwiftUI
 import SwiftData
 
 struct DSMPerformanceView: View {
