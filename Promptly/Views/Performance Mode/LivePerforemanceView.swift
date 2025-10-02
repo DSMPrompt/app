@@ -1070,7 +1070,7 @@ struct DSMCueBoxView: View {
                     
                     Spacer()
                     
-                    Button(cue.type.isStandby ? "STANDBY" : "GO") {
+                    Button(cue.type.generalName) {
                         onExecute()
                     }
                     .font(.caption)
@@ -1078,7 +1078,7 @@ struct DSMCueBoxView: View {
                     .foregroundColor(.white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(isCalled ? Color.gray : (cue.type.isStandby ? Color.orange : Color.green))
+                    .background(isCalled ? Color.gray : (cue.type.cueStackColor))
                     .cornerRadius(6)
                     .disabled(isCalled)
                 }
@@ -1577,8 +1577,10 @@ extension DSMPerformanceView {
     }
     
     private func executeCue(_ cue: Cue) {
-        if cue.type.isStandby {
+        if cue.type.generalName == "STANDBY" {
             logCall("STANDBY: \(cue.label)", type: .call)
+        } else if cue.type.generalName == "WARNING" {
+            logCall("WARNING: \(cue.label)", type: .call)
         } else {
             logCall("GO: \(cue.label)", type: .action)
         }
@@ -1644,13 +1646,15 @@ extension DSMPerformanceView {
             executionMethod: "Remote Control"
         )
         cueExecutions.append(execution)
-        
+      
         if cue.hasAlert {
             showCueAlert()
         }
-        
-        if cue.type.isStandby {
+      
+        if cue.type.generalName == "STANDBY" {
             logCall("REMOTE STANDBY: \(cue.label)", type: .call)
+        } else if cue.type.generalName == "WARNING" {
+            logCall("REMOTE WARNING: \(cue.label)", type: .call)
         } else {
             logCall("REMOTE GO: \(cue.label)", type: .action)
         }
@@ -1747,18 +1751,6 @@ extension PerformanceState {
         }
     }
 }
-
-extension CueType {
-    var isStandby: Bool {
-        switch self {
-        case .lightingStandby, .soundStandby, .flyStandby, .automationStandby:
-            return true
-        default:
-            return false
-        }
-    }
-}
-
 
 extension View {
     func applyDSMModifiers(

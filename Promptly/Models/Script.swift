@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import SwiftUI
 
 @Model
 class Script: Identifiable {
@@ -167,6 +168,27 @@ enum CueOffset: String, Codable, CaseIterable {
     case after = "after"
 }
 
+enum StageLocation: String, Codable, CaseIterable {
+    case pit = "pit"
+    case leftWing = "left_wing"
+    case rightWing = "right_wing"
+    case upstage = "upstage"
+    case downstage = "downstage"
+    case stageLeft = "stage_left"
+    case stageRight = "stage_right"
+    case upstageLeft = "upstage_left"
+    case upstageRight = "upstage_right"
+    case downstageLeft = "downstage_left"
+    case downstageRight = "downstage_right"
+    case centerStage = "center_stage"
+    
+}
+
+struct CueHapticConfig: Codable {
+    var location: StageLocation // where are they (if someone is away used for quick swapping)
+    var crewId: Int // unique id (goes from 0, 1, 2 etc) for the crew member, regardless of position
+}
+
 enum CueType: String, Codable, CaseIterable {
     case lightingStandby = "lighting_standby"
     case lightingGo = "lighting_go"
@@ -176,6 +198,7 @@ enum CueType: String, Codable, CaseIterable {
     case flyGo = "fly_go"
     case automationStandby = "automation_standby"
     case automationGo = "automation_go"
+    case setWarning = "set_warning"
     case setStandby = "set_standby"
     case setGo = "set_go"
     case cuelightStandby = "cuelight_standby"
@@ -191,6 +214,7 @@ enum CueType: String, Codable, CaseIterable {
         case .flyGo: return "Fly GO"
         case .automationStandby: return "Auto Standby"
         case .automationGo: return "Auto GO"
+        case .setWarning: return "Set Warning"
         case .setStandby: return "Set Standby"
         case .setGo: return "Set GO"
         case .cuelightStandby: return "Cuelight Standby"
@@ -204,8 +228,37 @@ enum CueType: String, Codable, CaseIterable {
         case .soundStandby, .soundGo: return "#FF6B6B"
         case .flyStandby, .flyGo: return "#4ECDC4"
         case .automationStandby, .automationGo: return "#45B7D1"
-        case .setStandby, .setGo: return "#944ECD"
+        case .setStandby, .setGo, .setWarning: return "#944ECD"
         case .cuelightStandby, .cuelightGo: return "#CD4EBC"
+        }
+    }
+
+    var cueStackColor: String {
+        switch self {
+            case .lightingStandby, .soundStandby, .flyStandby, .automationStandby, .setStandby, .setWarning, .cuelightStandby: return Color.orange
+            case .lightingGo, .soundGo, .flyGo, .automationGo, .setGo, .cuelightGo: return Color.green
+        }
+    }
+
+    var generalName: String {
+        switch self {
+            case .lightingStandby, .soundStandby, .flyStandby, .automationStandby, .setStandby, .cuelightStandby: return "STANDBY"
+            case .lightingGo, .soundGo, .flyGo, .automationGo, .setGo, .cuelightGo: return "GO"
+            case .setWarning: return "WARNING"
+        }
+    }
+
+    var canHaptic: Bool {
+        switch self {
+            case .lightingStandby, .soundStandby, .flyStandby, .automationStandby, .cuelightStandby, .lightingGo, .soundGo, .flyGo, .automationGo, .cuelightGo: return false
+            case .setWarning, .setStandby, .setGo: return true
+        }
+    }
+
+    var isStandby: Bool {
+        switch self {
+            case .lightingStandby, .soundStandby, .flyStandby, .automationStandby, .setStandby, .cuelightStandby, .setWarning: return true
+            case .lightingGo, .soundGo, .flyGo, .automationGo, .setGo, .cuelightGo: return false
         }
     }
 }
