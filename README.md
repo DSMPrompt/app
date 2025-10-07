@@ -24,8 +24,7 @@
 - Please check LICENSE!
 
 ## Download...?
-- We currently are planning to open a public testflight
-- In the future we will hopefully release to the app store!
+- Find us on the app store: DSM Prompt
 
 ## The code quality 
 - This app was written 2 days before a show - no judgement please!
