@@ -49,8 +49,12 @@ struct SpectatorPerformanceView: View {
                     }
 #if os(watchOS)
                     .foregroundColor(Color(.gray))
-#else
-                    .foregroundColor(Color(.systemBackground))
+#endif
+#if os(iOS)
+                    .foregroundColor(Color(uiColor: .systemBackground))
+#endif
+#if os(macOS)
+                    .foregroundColor(Color(nsColor: .windowBackgroundColor))
 #endif
                     .onChange(of: currentLine) { _, newValue in
                         withAnimation(.easeOut(duration: 0.15)) {
@@ -60,13 +64,23 @@ struct SpectatorPerformanceView: View {
                 }
             }
         }
+        #if os(iOS)
         .navigationBarHidden(true)
+        #endif
         .preferredColorScheme(.dark)
+        #if os(iOS)
         .fullScreenCover(isPresented: $showingTimeCall) {
             TimeCallOverlay(message: timeCalls) {
                 showingTimeCall = false
             }
         }
+        #else
+        .sheet(isPresented: $showingTimeCall) {
+            TimeCallOverlay(message: timeCalls) {
+                showingTimeCall = false
+            }
+        }
+        #endif
         .onAppear {
             sortedLinesCache = script.lines.sorted { $0.lineNumber < $1.lineNumber }
             
@@ -169,15 +183,24 @@ struct SpectatorPerformanceView: View {
 #if os(watchOS)
         .foregroundColor(Color(.gray))
 #else
-        .foregroundColor(Color(.systemGray6))
+        #if os(iOS)
+        .foregroundColor(Color(uiColor: .systemGray6))
+        #endif
+        #if os(macOS)
+        .foregroundColor(Color(nsColor: .systemGray))
+        #endif
 #endif
         .overlay(alignment: .bottom) {
             Rectangle()
                 .frame(height: 1)
             #if os(watchOS)
                 .foregroundColor(Color(.gray))
-            #else
-                .foregroundColor(Color(.separator))
+            #endif
+            #if os(iOS)
+                .foregroundColor(Color(uiColor: .separator))
+            #endif
+            #if os(macOS)
+                .foregroundColor(Color(nsColor: .separatorColor))
             #endif
         }
     }

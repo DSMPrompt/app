@@ -147,7 +147,10 @@ struct DSMPerformanceView: View {
                 }
             }
             .alert("Go To Line (set active)", isPresented: self.$showingGoToLineAlert) {
-                TextField("Line", text: self.$goToLine).keyboardType(.numberPad)
+                TextField("Line", text: self.$goToLine)
+                    #if os(iOS)
+                    .keyboardType(.numberPad)
+                    #endif
                 Button("Cancel", role: .cancel) { }
                 Button("Go To", role: .destructive) {
                     self.moveToLine(Int(self.goToLine) ?? 0)
@@ -222,7 +225,12 @@ struct DSMPerformanceView: View {
                         }
                         .frame(width: geometry.size.width * 0.7)
                         .frame(maxHeight: .infinity)
-                        .background(Color(.systemBackground))
+                        #if os(iOS)
+            .background(Color(uiColor: .systemBackground))
+            #endif
+            #if os(macOS)
+            .background(Color(nsColor: .windowBackgroundColor))
+            #endif
 
                         VStack(spacing: 0) {
                             cuesPanelHeader
@@ -598,7 +606,12 @@ struct DSMPerformanceView: View {
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
-            .background(Color(.systemBackground))
+            #if os(iOS)
+            .background(Color(uiColor: .systemBackground))
+            #endif
+            #if os(macOS)
+            .background(Color(nsColor: .windowBackgroundColor))
+            #endif
             .onChange(of: currentLineNumber) { _, newValue in
                 proxy.scrollTo("line-\(newValue)", anchor: .center)
             }
@@ -978,9 +991,11 @@ struct DSMSettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem {
                     Button("Done") {
                         dismiss()
                     }
@@ -1295,7 +1310,12 @@ struct DSMDetailsView: View {
                             }
                         }
                         .padding()
-                        .background(Color(.secondarySystemGroupedBackground))
+                        #if os(iOS)
+                        .background(Color(uiColor: .secondarySystemGroupedBackground))
+                        #endif
+                        #if os(macOS)
+                        .background(Color(nsColor: .controlBackgroundColor))
+                        #endif
                         .cornerRadius(12)
                     }
                     
@@ -1327,15 +1347,17 @@ struct DSMDetailsView: View {
                 .padding()
             }
             .navigationTitle("Performance Details")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Pause and End") {
                         self.showAlertWhenEndingShowWithPause = true
                     }
                 }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
+
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         dismiss()
                     }
@@ -1393,7 +1415,12 @@ struct DSMActionButton: View {
             }
             .frame(maxWidth: .infinity)
             .padding()
-            .background(Color(.systemBackground))
+            #if os(iOS)
+            .background(Color(uiColor: .systemBackground))
+            #endif
+            #if os(macOS)
+            .background(Color(nsColor: .windowBackgroundColor))
+            #endif
             .cornerRadius(12)
             .shadow(radius: 2)
         }
@@ -1452,7 +1479,12 @@ struct DSMCallLogRow: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Color(.systemBackground))
+        #if os(iOS)
+        .background(Color(uiColor: .systemBackground))
+        #endif
+        #if os(macOS)
+        .background(Color(nsColor: .windowBackgroundColor))
+        #endif
         .cornerRadius(8)
     }
 }
@@ -1722,7 +1754,9 @@ extension View {
         currentTime: Binding<Date>
     ) -> some View {
         self
+            #if os(iOS)
             .navigationBarHidden(true)
+            #endif
             .preferredColorScheme(.dark)
             .focusable()
             .focused(isViewFocused)
@@ -1872,9 +1906,11 @@ struct DSMGoToSection: View {
                 }
             }
             .navigationTitle("Go To Section")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem {
                     Button {
                         dismiss()
                     } label: {
@@ -1929,9 +1965,11 @@ struct MIDIConfigurationView: View {
                 }
             }
             .navigationTitle("MIDI Remote")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem {
                     Button("Done") {
                         dismiss()
                     }

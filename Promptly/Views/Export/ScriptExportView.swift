@@ -5,6 +5,7 @@
 //  Export script with cues and sections marked as PDF
 //
 
+#if os(iOS)
 import SwiftUI
 import PDFKit
 import UniformTypeIdentifiers
@@ -40,7 +41,6 @@ struct ScriptPDFExporterView: View {
                 .padding()
             }
             .navigationTitle("Export PDF")
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
@@ -352,7 +352,7 @@ struct ScriptPDFExporterView: View {
 enum ExportError: Error, LocalizedError {
     case pdfCreationFailed
     case fileWriteFailed
-    
+
     var errorDescription: String? {
         switch self {
         case .pdfCreationFailed:
@@ -362,3 +362,4 @@ enum ExportError: Error, LocalizedError {
         }
     }
 }
+#endif

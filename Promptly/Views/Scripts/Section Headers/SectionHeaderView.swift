@@ -127,15 +127,17 @@ struct SectionDetailsView: View {
                 }
             }
             .navigationTitle("Section Details")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
                 }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
+
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Select Line") {
                         onStartSelection(pendingTitle, pendingType, pendingNotes)
                         dismiss()
@@ -171,7 +173,12 @@ struct SectionTemplateButton: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
-            .background(Color(.secondarySystemGroupedBackground))
+            #if os(iOS)
+            .background(Color(uiColor: .secondarySystemGroupedBackground))
+            #endif
+            #if os(macOS)
+            .background(Color(nsColor: .controlBackgroundColor))
+            #endif
             .cornerRadius(8)
         }
         .buttonStyle(PlainButtonStyle())
@@ -322,15 +329,17 @@ struct SectionsManagerView: View {
             }
         }
         .navigationTitle(isSelectingLineForSection ? "Select Line" : "Script Sections")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
+            ToolbarItem(placement: .cancellationAction) {
                 Button("Done") {
                     dismiss()
                 }
             }
 
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem {
                 if !isSelectingLineForSection {
                     Menu {
                         Button {
@@ -581,15 +590,17 @@ struct AddSectionView: View {
                     }
                 }
                 .navigationTitle("Add Section")
+                #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
+                #endif
                 .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
+                    ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") {
                             dismiss()
                         }
                     }
-                    
-                    ToolbarItem(placement: .navigationBarTrailing) {
+
+                    ToolbarItem(placement: .confirmationAction) {
                         Button("Add") {
                             addSection()
                         }
@@ -672,7 +683,12 @@ struct LineSelectionView: View {
                         .multilineTextAlignment(.center)
                 }
                 .padding()
-                .background(Color(.systemGroupedBackground))
+                #if os(iOS)
+                .background(Color(uiColor: .systemGroupedBackground))
+                #endif
+                #if os(macOS)
+                .background(Color(nsColor: .windowBackgroundColor))
+                #endif
                 
                 // Script lines
                 ScrollView {
@@ -688,12 +704,19 @@ struct LineSelectionView: View {
                     }
                     .padding()
                 }
-                .background(Color(.systemGroupedBackground))
+                #if os(iOS)
+                .background(Color(uiColor: .systemGroupedBackground))
+                #endif
+                #if os(macOS)
+                .background(Color(nsColor: .windowBackgroundColor))
+                #endif
             }
             .navigationTitle("Select Line")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         onCancel()
                     }
@@ -734,7 +757,12 @@ struct SelectableLineView: View {
             .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected ? Color.blue : Color(.secondarySystemGroupedBackground))
+                    #if os(iOS)
+                    .fill(isSelected ? Color.blue : Color(uiColor: .secondarySystemGroupedBackground))
+                    #endif
+                    #if os(macOS)
+                    .fill(isSelected ? Color.blue : Color(nsColor: .controlBackgroundColor))
+                    #endif
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8)

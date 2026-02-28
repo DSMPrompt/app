@@ -70,7 +70,9 @@ struct AddShowView: View {
             errorSection
         }
         .navigationTitle("New Show")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .fileImporter(
             isPresented: $isShowingFilePicker,
             allowedContentTypes: [.pdf],
@@ -204,24 +206,41 @@ struct AddShowView: View {
             }
         }
         .navigationTitle(title)
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .interactiveDismissDisabled(!self.isError)
     }
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
+        #if os(iOS)
         ToolbarItem(placement: .navigationBarLeading) {
             Button("Cancel") {
                 dismiss()
             }
         }
-        
+
         ToolbarItem(placement: .navigationBarTrailing) {
             Button("Create") {
                 createShow()
             }
             .disabled(!canCreateShow || isProcessing)
         }
+        #else
+        ToolbarItem(placement: .cancellationAction) {
+            Button("Cancel") {
+                dismiss()
+            }
+        }
+
+        ToolbarItem(placement: .confirmationAction) {
+            Button("Create") {
+                createShow()
+            }
+            .disabled(!canCreateShow || isProcessing)
+        }
+        #endif
     }
 
     private func handleFileImportResult(_ result: Result<[URL], Error>) {

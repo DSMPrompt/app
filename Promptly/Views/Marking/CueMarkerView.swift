@@ -50,7 +50,9 @@ struct CueEditorView: View {
                             .tag(type)
                         }
                     }
+                    #if os(iOS)
                     .pickerStyle(WheelPickerStyle())
+                    #endif
                 }
                 
                 Section(header: Text("Cue Details")) {
@@ -86,15 +88,17 @@ struct CueEditorView: View {
                 }
             }
             .navigationTitle("Add Cue")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
                 }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
+
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
                         addCue()
                     }
@@ -155,7 +159,12 @@ struct QuickCueButton: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
-            .background(Color(.secondarySystemGroupedBackground))
+            #if os(iOS)
+            .background(Color(uiColor: .secondarySystemGroupedBackground))
+            #endif
+            #if os(macOS)
+            .background(Color(nsColor: .controlBackgroundColor))
+            #endif
             .cornerRadius(8)
         }
         .buttonStyle(PlainButtonStyle())
@@ -199,7 +208,12 @@ struct MarkingToolsView: View {
                         .foregroundColor(.red)
                     }
                     .padding()
-                    .background(Color(.secondarySystemGroupedBackground))
+                    #if os(iOS)
+                    .background(Color(uiColor: .secondarySystemGroupedBackground))
+                    #endif
+                    #if os(macOS)
+                    .background(Color(nsColor: .controlBackgroundColor))
+                    #endif
                     .cornerRadius(12)
                 }
                 
@@ -230,7 +244,12 @@ struct MarkingToolsView: View {
                         .foregroundColor(.red)
                     }
                     .padding()
-                    .background(Color(.secondarySystemGroupedBackground))
+                    #if os(iOS)
+                    .background(Color(uiColor: .secondarySystemGroupedBackground))
+                    #endif
+                    #if os(macOS)
+                    .background(Color(nsColor: .controlBackgroundColor))
+                    #endif
                     .cornerRadius(12)
                 }
                 
@@ -250,9 +269,11 @@ struct MarkingToolsView: View {
             }
             .padding()
             .navigationTitle("Marking Tools")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem {
                     Button("Done") {
                         dismiss()
                     }
