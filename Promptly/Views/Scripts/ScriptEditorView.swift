@@ -25,7 +25,7 @@ struct ScriptEditorView: View {
     private var sortedLines: [ScriptLine] {
         script.lines.sorted(by: { $0.lineNumber < $1.lineNumber })
     }
-    
+
     private func handleCueEdit(cue: Cue) {
         guard let line = script.lines.first(where: { $0.id == cue.lineId }) else { return }
         selectedLine = line
@@ -59,7 +59,7 @@ struct ScriptEditorView: View {
         }
         .navigationTitle(Text(script.name))
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem {
                 Button("Tools") {
                     isShowingMarkingTools = true
                 }
@@ -237,7 +237,12 @@ struct ScriptLineView: View, Equatable {
         if line.isMarked, let colorHex = line.markColor {
             return Color(hex: colorHex)
         }
-        return Color(.secondarySystemGroupedBackground)
+        #if os(iOS)
+        return Color(uiColor: .secondarySystemGroupedBackground)
+        #endif
+        #if os(macOS)
+        return Color(nsColor: .controlBackgroundColor)
+        #endif
     }
     
     private var backgroundOpacity: Double {

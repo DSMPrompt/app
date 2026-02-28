@@ -157,7 +157,7 @@ struct EditScriptView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing, content: {
+            ToolbarItem(content: {
                 if isEditing {
                     Button {
                         cancelEditing()
@@ -188,7 +188,9 @@ struct EditScriptView: View {
             })
         }
         .navigationTitle(Text(script.name))
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
     
     // MARK: - View Components
@@ -277,7 +279,12 @@ struct EditScriptView: View {
             .padding(.horizontal)
         }
         .padding(.vertical, 8)
-        .background(Color(.systemGroupedBackground))
+        #if os(iOS)
+        .background(Color(uiColor: .systemGroupedBackground))
+        #endif
+        #if os(macOS)
+        .background(Color(nsColor: .windowBackgroundColor))
+        #endif
     }
     
     private var scriptContentView: some View {
@@ -592,7 +599,12 @@ struct EditableScriptLineView: View {
         if line.isMarked, let colorHex = line.markColor {
             return Color(hex: colorHex)
         }
-        return Color(.secondarySystemGroupedBackground)
+        #if os(iOS)
+        return Color(uiColor: .secondarySystemGroupedBackground)
+        #endif
+        #if os(macOS)
+        return Color(nsColor: .controlBackgroundColor)
+        #endif
     }
     
     private var backgroundOpacity: Double {
@@ -666,15 +678,17 @@ struct FlagEditorView: View {
                 }
             }
             .navigationTitle("Edit Flags")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
                 }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
+
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         saveFlags()
                     }
@@ -795,15 +809,17 @@ struct BulkFlagEditorView: View {
                 }
             }
             .navigationTitle("Bulk Edit Flags")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
                 }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
+
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         dismiss()
                     }
@@ -1009,15 +1025,17 @@ struct AddLineView: View {
                 }
             }
             .navigationTitle("Add Line")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
                 }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
+
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
                         addLine()
                     }

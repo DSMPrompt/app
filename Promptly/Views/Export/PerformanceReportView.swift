@@ -45,9 +45,11 @@ struct PerformanceReportView: View {
                 .padding()
             }
             .navigationTitle("Performance Report")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {                
-                ToolbarItem(placement: .navigationBarTrailing) {
+            #endif
+            .toolbar {
+                ToolbarItem {
                     Menu {
                         Button("Export PDF", systemImage: "square.and.arrow.up") {
                             generatePDFSheetIsPresent = true
@@ -60,7 +62,21 @@ struct PerformanceReportView: View {
         }
         .sheet(isPresented: $generatePDFSheetIsPresent) {
             if let pdfURL = pdfURL {
+                #if os(iOS)
                 ShareSheet(items: [pdfURL])
+                #else
+                VStack {
+                    Text("PDF Generated")
+                        .font(.headline)
+                    Text("Location: \(pdfURL.path)")
+                        .font(.caption)
+                        .padding()
+                    Button("Done") {
+                        generatePDFSheetIsPresent = false
+                    }
+                }
+                .padding()
+                #endif
             } else {
                 ProgressView("Compiling PDF...")
                     .onAppear {
@@ -308,7 +324,8 @@ struct PerformanceReportView: View {
             }
         }
     }
-    
+
+    #if os(iOS)
     private func generatePDF() {
         print("🔄 Starting PDF generation...")
         let pdfGenerator = PerformanceReportPDFGenerator()
@@ -324,6 +341,11 @@ struct PerformanceReportView: View {
             }
         }
     }
+    #else
+    private func generatePDF() {
+        print("⚠️ PDF generation not available on macOS")
+    }
+    #endif
     
     private func formatDuration(_ duration: TimeInterval) -> String {
         let hours = Int(duration) / 3600
@@ -365,7 +387,12 @@ struct ReportSection<Content: View>: View {
             
             content
                 .padding()
-                .background(Color(.secondarySystemGroupedBackground))
+                #if os(iOS)
+                .background(Color(uiColor: .secondarySystemGroupedBackground))
+                #endif
+                #if os(macOS)
+                .background(Color(nsColor: .controlBackgroundColor))
+                #endif
                 .cornerRadius(12)
         }
     }
@@ -453,13 +480,16 @@ struct SummaryRow: View {
     }
 }
 
+#if os(iOS)
+import UIKit
+
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
-    
+
     func makeUIViewController(context: Context) -> UIActivityViewController {
         UIActivityViewController(activityItems: items, applicationActivities: nil)
     }
-    
+
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
@@ -609,3 +639,4 @@ class PerformanceReportPDFGenerator {
         return y + textSize.height + 4
     }
 }
+#endif

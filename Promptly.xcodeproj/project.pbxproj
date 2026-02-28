@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		6F7FFE192EAD3F0100CE9D01 /* WhatsNewKit in Frameworks */ = {isa = PBXBuildFile; productRef = 6F7FFE182EAD3F0100CE9D01 /* WhatsNewKit */; };
-		6F8BC3002E927EA7008EE618 /* Promptly-WatchOS Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 6F8BC2F62E927EA5008EE618 /* Promptly-WatchOS Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		6F8BC3002E927EA7008EE618 /* Promptly-WatchOS Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 6F8BC2F62E927EA5008EE618 /* Promptly-WatchOS Watch App.app */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		6F8BC30B2E927FED008EE618 /* MQTTNIO in Frameworks */ = {isa = PBXBuildFile; productRef = 6F8BC30A2E927FED008EE618 /* MQTTNIO */; };
 		6F9232672EA2A9E500D929A7 /* MIDIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 6F9232662EA2A9E500D929A7 /* MIDIKit */; };
 		6F9232692EA2A9E500D929A7 /* MIDIKitControlSurfaces in Frameworks */ = {isa = PBXBuildFile; productRef = 6F9232682EA2A9E500D929A7 /* MIDIKitControlSurfaces */; };
@@ -290,6 +290,7 @@
 /* Begin PBXTargetDependency section */
 		6F8BC2FF2E927EA7008EE618 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			platformFilter = ios;
 			target = 6F8BC2F52E927EA5008EE618 /* Promptly-WatchOS Watch App */;
 			targetProxy = 6F8BC2FE2E927EA7008EE618 /* PBXContainerItemProxy */;
 		};
@@ -449,10 +450,11 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Debug;
@@ -494,10 +496,11 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Release;

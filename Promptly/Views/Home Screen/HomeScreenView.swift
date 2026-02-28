@@ -139,13 +139,14 @@ struct HomeScreenView: View {
                 Label("Network Settings", systemImage: "network")
             }
             
+            #if os(iOS)
             NavigationLink(
                 destination: BluetoothMIDIView()
                     .navigationTitle("Remote Peripheral Config")
-                    .navigationBarTitleDisplayMode(.inline)
             ) {
                 Label("MIDI", systemImage: "av.remote")
             }
+            #endif
             
             Button {
                 showingImportShowSheet = true
@@ -186,11 +187,15 @@ struct NetworkSettingsView: View {
             Form {
                 Section {
                     TextField("MQTT IP Address", text: $mqttIP)
+                        #if os(iOS)
                         .textInputAutocapitalization(.never)
+                        #endif
                         .autocorrectionDisabled()
                     
                     TextField("MQTT Port", text: $mqttPort)
+                        #if os(iOS)
                         .keyboardType(.numberPad)
+                        #endif
                 } header: {
                     Text("Connection Settings")
                 } footer: {
@@ -199,7 +204,9 @@ struct NetworkSettingsView: View {
                 }
             }
             .navigationTitle("Network Settings")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {

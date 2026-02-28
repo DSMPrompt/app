@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
+import MIDIKitIO
 
 extension UTType {
     static var dsmPrompt: UTType {
@@ -18,6 +19,8 @@ extension UTType {
 struct ShowDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(ObservableMIDIManager.self) private var midiManager
+    @Environment(MIDIHelper.self) private var midiHelper
     
     let show: Show
     @State private var isShowingEditShow: Bool = false
@@ -73,10 +76,15 @@ struct ShowDetailView: View {
                 }
                 .padding()
             }
-            .background(Color(.systemGroupedBackground))
+            #if os(iOS)
+            .background(Color(uiColor: .systemGroupedBackground))
             .navigationBarTitleDisplayMode(.inline)
+            #endif
+            #if os(macOS)
+            .background(Color(nsColor: .windowBackgroundColor))
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem {
                     Menu {
                         Button("Edit Show", systemImage: "pencil") {
                             isShowingEditShow = true
@@ -108,11 +116,15 @@ struct ShowDetailView: View {
                 PerformanceReportsListView(reports: reportsForThisShow)
             }
             .sheet(isPresented: self.$showingExportScriptSheet, content: {
+                #if os(iOS)
                 Group {
                     if let script = self.show.script {
                         ScriptPDFExporterView(script: script)
                     }
                 }
+                #else
+                Text("PDF Export not available on macOS")
+                #endif
             })
             .sheet(isPresented: $showingAddPerformanceSheet) {
                 NavigationView {
@@ -131,15 +143,17 @@ struct ShowDetailView: View {
                     }
                     .padding()
                     .navigationTitle("New Performance")
+                    #if os(iOS)
                     .navigationBarTitleDisplayMode(.inline)
+                    #endif
                     .toolbar {
-                        ToolbarItem(placement: .navigationBarLeading) {
+                        ToolbarItem(placement: .cancellationAction) {
                             Button("Cancel") {
                                 showingAddPerformanceSheet = false
                             }
                         }
-                        
-                        ToolbarItem(placement: .navigationBarTrailing) {
+
+                        ToolbarItem(placement: .confirmationAction) {
                             Button("Add") {
                                 addPerformance(date: newPerformanceDate)
                                 showingAddPerformanceSheet = false
@@ -188,12 +202,24 @@ struct ShowDetailView: View {
                     }
                 }
             }
+            #if os(iOS)
             .fullScreenCover(item: $performanceToStart, onDismiss: {
                 performanceToStart = nil
             }, content: {
                 DSMPerformanceView(performance: $0)
+                    .environment(midiManager)
+                    .environment(midiHelper)
                     .interactiveDismissDisabled(true)
             })
+            #else
+            .sheet(item: $performanceToStart, onDismiss: {
+                performanceToStart = nil
+            }, content: {
+                DSMPerformanceView(performance: $0)
+                    .environment(midiManager)
+                    .environment(midiHelper)
+            })
+            #endif
             .onAppear {
                 print("📅 Performance dates: \(show.performanceDates.count)")
                 print("🎭 Performances: \(show.peformances.count)")
@@ -257,7 +283,12 @@ struct ShowDetailView: View {
                         Spacer()
                     }
                     .padding()
-                    .background(Color(.secondarySystemGroupedBackground))
+                    #if os(iOS)
+                    .background(Color(uiColor: .secondarySystemGroupedBackground))
+                    #endif
+                    #if os(macOS)
+                    .background(Color(nsColor: .controlBackgroundColor))
+                    #endif
                     .cornerRadius(8)
                 }
 
@@ -276,7 +307,7 @@ struct ShowDetailView: View {
                 //         Spacer()
                 //     }
                 //     .padding()
-                //     .background(Color(.secondarySystemGroupedBackground))
+                //     .background(Color.platformSecondarySystemGroupedBackground)
                 //     .cornerRadius(8)
                 // }
             }
@@ -287,15 +318,43 @@ struct ShowDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Script")
                 .font(.headline)
-            
+
             if let script = show.script {
                 NavigationLink(destination: ScriptEditorView(script: script)) {
                     ScriptSummaryCard(script: script)
                 }
                 .buttonStyle(PlainButtonStyle())
+				
+                NavigationLink(destination: RehearsalModeView(script: script)) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Rehearsal Mode")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            Text("Fast cue capture during tech rehearsals")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "sparkles")
+                            .font(.caption)
+                            .foregroundColor(.purple)
+                    }
+                    .padding()
+                    #if os(iOS)
+                    .background(Color(uiColor: .secondarySystemGroupedBackground))
+                    #endif
+                    #if os(macOS)
+                    .background(Color(nsColor: .controlBackgroundColor))
+                    #endif
+                    .cornerRadius(8)
+                }
+                .buttonStyle(PlainButtonStyle())
             } else {
                 EmptyScriptCard {
-                    
+
                 }
             }
         }
@@ -320,7 +379,12 @@ struct ShowDetailView: View {
                 .foregroundColor(.blue)
             }
             .padding()
-            .background(Color(.secondarySystemGroupedBackground))
+            #if os(iOS)
+            .background(Color(uiColor: .secondarySystemGroupedBackground))
+            #endif
+            #if os(macOS)
+            .background(Color(nsColor: .controlBackgroundColor))
+            #endif
             .cornerRadius(8)
         }
     }
@@ -421,9 +485,10 @@ struct ShowDetailView: View {
     }
 }
 
+@preconcurrency
 struct DSMPromptDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.dsmPrompt] }
-    
+
     let show: Show
     
     init(show: Show) {
@@ -492,7 +557,12 @@ struct PerformanceReportSummaryCard: View {
                 }
             }
             .padding()
-            .background(Color(.secondarySystemGroupedBackground))
+            #if os(iOS)
+            .background(Color(uiColor: .secondarySystemGroupedBackground))
+            #endif
+            #if os(macOS)
+            .background(Color(nsColor: .controlBackgroundColor))
+            #endif
             .cornerRadius(8)
         }
         .buttonStyle(PlainButtonStyle())
@@ -588,9 +658,11 @@ struct PerformanceReportsListView: View {
                 }
             }
             .navigationTitle("Performance Reports")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem {
                     Button("Done") {
                         dismiss()
                     }
@@ -658,7 +730,12 @@ struct PerformanceDateRow: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
-            .background(Color(.secondarySystemGroupedBackground))
+            #if os(iOS)
+            .background(Color(uiColor: .secondarySystemGroupedBackground))
+            #endif
+            #if os(macOS)
+            .background(Color(nsColor: .controlBackgroundColor))
+            #endif
             .cornerRadius(8)
         }
         .buttonStyle(PlainButtonStyle())
@@ -687,7 +764,12 @@ struct ScriptSummaryCard: View {
                 .foregroundColor(.secondary)
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
+        #if os(iOS)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        #endif
+        #if os(macOS)
+        .background(Color(nsColor: .controlBackgroundColor))
+        #endif
         .cornerRadius(8)
     }
 }
@@ -708,7 +790,12 @@ struct EmptyScriptCard: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 20)
-            .background(Color(.secondarySystemGroupedBackground))
+            #if os(iOS)
+            .background(Color(uiColor: .secondarySystemGroupedBackground))
+            #endif
+            #if os(macOS)
+            .background(Color(nsColor: .controlBackgroundColor))
+            #endif
             .cornerRadius(8)
         }
         .buttonStyle(PlainButtonStyle())
@@ -733,7 +820,12 @@ struct QuickActionCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
-        .background(Color(.secondarySystemGroupedBackground))
+        #if os(iOS)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        #endif
+        #if os(macOS)
+        .background(Color(nsColor: .controlBackgroundColor))
+        #endif
         .cornerRadius(8)
     }
 }
@@ -769,9 +861,11 @@ struct EditShowView: View {
             }
         }
         .navigationTitle("Edit Show")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
+            ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") {
                     dismiss()
                 }
@@ -811,15 +905,17 @@ struct PerformanceDetailView: View {
             }
             .padding()
             .navigationTitle("Performance")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
                 }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
+
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         performance.date = performanceDate
                         dismiss()

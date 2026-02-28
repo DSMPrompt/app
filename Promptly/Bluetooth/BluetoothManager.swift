@@ -210,19 +210,24 @@ struct PromptlyBluetoothSettingsView: View {
                 VStack(spacing: 8) {
                     Text("Promptly Clicker Status")
                         .font(.headline)
-                    
+
                     HStack {
                         Circle()
                             .fill(bluetoothManager.isConnected ? .green : .red)
                             .frame(width: 12, height: 12)
-                        
+
                         Text(bluetoothManager.connectionStatus)
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
                 }
                 .padding()
-                .background(Color(.secondarySystemGroupedBackground))
+                #if os(iOS)
+                .background(Color(uiColor: .secondarySystemGroupedBackground))
+                #endif
+                #if os(macOS)
+                .background(Color(nsColor: .controlBackgroundColor))
+                #endif
                 .cornerRadius(12)
                 
                 VStack(spacing: 16) {
@@ -317,7 +322,12 @@ struct PromptlyBluetoothSettingsView: View {
                         .padding(.top, 4)
                 }
                 .padding()
-                .background(Color(.secondarySystemGroupedBackground))
+                #if os(iOS)
+                .background(Color(uiColor: .secondarySystemGroupedBackground))
+                #endif
+                #if os(macOS)
+                .background(Color(nsColor: .controlBackgroundColor))
+                #endif
                 .cornerRadius(12)
                 
                 Spacer()

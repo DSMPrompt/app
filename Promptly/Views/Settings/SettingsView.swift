@@ -20,7 +20,9 @@ struct SettingsView: View {
             }
             .navigationTitle(Text("Settings"))
             .onChange(of: self.keepScreenOn) {_, _ in
+                #if os(iOS)
                 UIApplication.shared.isIdleTimerDisabled = self.keepScreenOn
+                #endif
             }
         }
     }
