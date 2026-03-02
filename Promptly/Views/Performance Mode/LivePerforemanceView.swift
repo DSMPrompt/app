@@ -167,7 +167,8 @@ struct DSMPerformanceView: View {
             .applyDSMKeyboard(
                 sortedLinesCache: sortedLinesCache,
                 currentLineNumber: currentLineNumber,
-                onLineMove: moveToLine
+                onLineMove: moveToLine,
+                onExecuteNextCue: executeNextCue
             )
             .applyDSMObservers(
                 allCues: allCues,
@@ -1769,7 +1770,8 @@ extension View {
     func applyDSMKeyboard(
         sortedLinesCache: [ScriptLine],
         currentLineNumber: Int,
-        onLineMove: @escaping (Int) -> Void
+        onLineMove: @escaping (Int) -> Void,
+        onExecuteNextCue: @escaping () -> Void
     ) -> some View {
         self
             .onKeyPress(.downArrow) {
@@ -1782,6 +1784,10 @@ extension View {
                 let prev = sortedLinesCache.last(where: { $0.lineNumber < currentLineNumber })?.lineNumber
                 let fallback = sortedLinesCache.first?.lineNumber ?? 1
                 withAnimation(.easeOut(duration: 0.1)) { onLineMove(prev ?? fallback) }
+                return .handled
+            }
+            .onKeyPress(.space) {
+                onExecuteNextCue()
                 return .handled
             }
     }
