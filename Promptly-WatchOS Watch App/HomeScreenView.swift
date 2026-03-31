@@ -48,7 +48,7 @@ struct HomeScreenView: View {
     var content: some View {
         Group {
             List {
-                Section(header: Text("Or join a show")) {
+                Section(header: Text("Join a show")) {
                     if availableShows.isEmpty {
                         Text("No available shows")
                             .foregroundStyle(.secondary)
@@ -110,7 +110,7 @@ struct NetworkSettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle("Network Settings")
+            .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
